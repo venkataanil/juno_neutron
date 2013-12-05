@@ -1,5 +1,7 @@
 [gerrit]
-host=review.openstack.org
-port=29418
-project=openstack/neutron.git
-defaultbranch=stable/juno
+host=code.engineering.redhat.com
+port=22
+project=neutron.git
+defaultbranch=rhos-6.0-patches
+defaultremote=rhos
+defaultrebase=0
