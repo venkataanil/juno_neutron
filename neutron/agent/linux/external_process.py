@@ -74,7 +74,8 @@ class ProcessManager(object):
         if not self.active:
             if not cmd_callback:
                 cmd_callback = self.default_cmd_callback
-            cmd = cmd_callback(self.get_pid_file_name(ensure_pids_dir=True))
+            self.ensure_pids_dir()
+            cmd = cmd_callback(self.get_pid_file_name())
 
             ip_wrapper = ip_lib.IPWrapper(self.root_helper, self.namespace)
             ip_wrapper.netns.execute(cmd, addl_env=self.cmd_addl_env)
@@ -92,8 +93,7 @@ class ProcessManager(object):
             utils.execute(cmd, self.root_helper)
             # In the case of shutting down, remove the pid file
             if sig == '9':
-                fileutils.delete_if_exists(
-                    self.get_pid_file_name(ensure_pids_dir=False))
+                fileutils.delete_if_exists(self.get_pid_file_name())
         elif pid:
             LOG.debug('Process for %(uuid)s pid %(pid)d is stale, ignoring '
                       'signal %(signal)s', {'uuid': self.uuid, 'pid': pid,
@@ -101,17 +101,18 @@ class ProcessManager(object):
         else:
             LOG.debug('No process started for %s', self.uuid)
 
-    def get_pid_file_name(self, ensure_pids_dir=False):
+    def ensure_pids_dir(self):
+        utils.ensure_dir(
+            os.path.dirname(self.get_pid_file_name()))
+
+    def get_pid_file_name(self):
         """Returns the file name for a given kind of config file."""
         if self.specific_pid_file:
-            if ensure_pids_dir:
-                utils.ensure_dir(os.path.dirname(self.specific_pid_file))
             return self.specific_pid_file
         else:
             return utils.get_conf_file_name(self.pids_path,
                                             self.uuid,
-                                            self.service_pid_fname,
-                                            ensure_pids_dir)
+                                            self.service_pid_fname)
 
     @property
     def pid(self):
@@ -216,6 +217,16 @@ class ProcessMonitor(object):
             uuid=uuid,
             service=service,
             specific_pid_file=specific_pid_file).pid
+
+    def ensure_pids_dir(self, uuid, service=None):
+        return self._get_or_create_process_manager(
+            uuid=uuid,
+            service=service).ensure_pids_dir()
+
+    def get_pid_file_name(self, uuid, service=None):
+        return self._get_or_create_process_manager(
+            uuid=uuid,
+            service=service).get_pid_file_name()
 
     def _get_or_create_process_manager(self, uuid, cmd_callback=None,
                                        namespace=None, service=None,
