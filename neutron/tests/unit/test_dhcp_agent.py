@@ -113,7 +113,10 @@ fake_dist_port = dhcp.DictModel(dict(id='12345678-1234-aaaa-1234567890ab',
                                 device_id='forzanapoli',
                                 fixed_ips=[fake_meta_fixed_ip]))
 
-fake_network = dhcp.NetModel(True, dict(id='12345678-1234-5678-1234567890ab',
+FAKE_NETWORK_UUID = '12345678-1234-5678-1234567890ab'
+FAKE_NETWORK_DHCP_NS = "qdhcp-%s" % FAKE_NETWORK_UUID
+
+fake_network = dhcp.NetModel(True, dict(id=FAKE_NETWORK_UUID,
                              tenant_id='aaaaaaaa-aaaa-aaaa-aaaaaaaaaaaa',
                              admin_state_up=True,
                              subnets=[fake_subnet1, fake_subnet2],
@@ -260,6 +263,7 @@ class TestDhcpAgent(base.BaseTestCase):
         self.assertTrue(dhcp.call_driver('foo', network))
         self.driver.assert_called_once_with(cfg.CONF,
                                             mock.ANY,
+                                            mock.ANY,
                                             'sudo',
                                             mock.ANY,
                                             mock.ANY)
@@ -275,6 +279,7 @@ class TestDhcpAgent(base.BaseTestCase):
                                    'schedule_resync') as schedule_resync:
                 self.assertIsNone(dhcp.call_driver('foo', network))
                 self.driver.assert_called_once_with(cfg.CONF,
+                                                    mock.ANY,
                                                     mock.ANY,
                                                     'sudo',
                                                     mock.ANY,
@@ -559,11 +564,15 @@ class TestDhcpAgentEventHandler(base.BaseTestCase):
         if is_isolated_network:
             self.external_process.assert_has_calls([
                 mock.call(
-                    cfg.CONF,
-                    '12345678-1234-5678-1234567890ab',
-                    'sudo',
-                    'qdhcp-12345678-1234-5678-1234567890ab'),
-                mock.call().enable(mock.ANY)
+                    conf=cfg.CONF,
+                    uuid=FAKE_NETWORK_UUID,
+                    root_helper='sudo',
+                    namespace=FAKE_NETWORK_DHCP_NS,
+                    service=None,
+                    default_cmd_callback=mock.ANY,
+                    specific_pid_file=None,
+                    cmd_addl_env=None),
+                mock.call().enable(reload_cfg=False)
             ])
         else:
             self.assertFalse(self.external_process.call_count)
@@ -686,10 +695,14 @@ class TestDhcpAgentEventHandler(base.BaseTestCase):
         if isolated_metadata:
             self.external_process.assert_has_calls([
                 mock.call(
-                    cfg.CONF,
-                    '12345678-1234-5678-1234567890ab',
-                    'sudo',
-                    'qdhcp-12345678-1234-5678-1234567890ab'),
+                    conf=cfg.CONF,
+                    uuid=FAKE_NETWORK_UUID,
+                    root_helper='sudo',
+                    namespace=FAKE_NETWORK_DHCP_NS,
+                    specific_pid_file=None,
+                    cmd_addl_env=None,
+                    default_cmd_callback=None,
+                    service=None),
                 mock.call().disable()
             ])
         else:
@@ -723,10 +736,14 @@ class TestDhcpAgentEventHandler(base.BaseTestCase):
         if isolated_metadata:
             self.external_process.assert_has_calls([
                 mock.call(
-                    cfg.CONF,
-                    '12345678-1234-5678-1234567890ab',
-                    'sudo',
-                    'qdhcp-12345678-1234-5678-1234567890ab'),
+                    conf=cfg.CONF,
+                    uuid=FAKE_NETWORK_UUID,
+                    root_helper='sudo',
+                    namespace=FAKE_NETWORK_DHCP_NS,
+                    specific_pid_file=None,
+                    service=None,
+                    cmd_addl_env=None,
+                    default_cmd_callback=None),
                 mock.call().disable()
             ])
         else:
@@ -744,11 +761,15 @@ class TestDhcpAgentEventHandler(base.BaseTestCase):
             self.dhcp.enable_isolated_metadata_proxy(fake_network)
             ext_process.assert_has_calls([
                 mock.call(
-                    cfg.CONF,
-                    '12345678-1234-5678-1234567890ab',
-                    'sudo',
-                    'qdhcp-12345678-1234-5678-1234567890ab'),
-                mock.call().enable(mock.ANY)
+                    conf=cfg.CONF,
+                    uuid=FAKE_NETWORK_UUID,
+                    root_helper='sudo',
+                    namespace=FAKE_NETWORK_DHCP_NS,
+                    default_cmd_callback=mock.ANY,
+                    service=None,
+                    specific_pid_file=None,
+                    cmd_addl_env=None),
+                mock.call().enable(reload_cfg=False)
             ])
 
     def test_disable_isolated_metadata_proxy(self):
@@ -757,10 +778,14 @@ class TestDhcpAgentEventHandler(base.BaseTestCase):
             self.dhcp.disable_isolated_metadata_proxy(fake_network)
             ext_process.assert_has_calls([
                 mock.call(
-                    cfg.CONF,
-                    '12345678-1234-5678-1234567890ab',
-                    'sudo',
-                    'qdhcp-12345678-1234-5678-1234567890ab'),
+                    conf=cfg.CONF,
+                    uuid='12345678-1234-5678-1234567890ab',
+                    root_helper='sudo',
+                    namespace='qdhcp-12345678-1234-5678-1234567890ab',
+                    specific_pid_file=None,
+                    service=None,
+                    cmd_addl_env=None,
+                    default_cmd_callback=None),
                 mock.call().disable()
             ])
 
