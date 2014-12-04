@@ -18,6 +18,7 @@ Routines for configuring Neutron
 """
 
 import os
+import sys
 
 from oslo.config import cfg
 from oslo.db import options as db_options
@@ -162,6 +163,10 @@ def setup_logging():
     product_name = "neutron"
     logging.setup(product_name)
     LOG.info(_("Logging enabled!"))
+    LOG.info(_("%(prog)s version %(version)s"),
+             {'prog': sys.argv[0],
+              'version': version.version_info.release_string()})
+    LOG.debug("command line: %s" % " ".join(sys.argv))
 
 
 def load_paste_app(app_name):
