@@ -15,6 +15,7 @@
 
 import sys
 
+from neutron.agent import dhcp_agent
 from neutron.cmd.sanity import checks
 from neutron.common import config
 from neutron.openstack.common.gettextutils import _LE
@@ -25,6 +26,7 @@ from oslo.config import cfg
 LOG = logging.getLogger(__name__)
 cfg.CONF.import_group('AGENT', 'neutron.plugins.openvswitch.common.config')
 cfg.CONF.import_group('OVS', 'neutron.plugins.openvswitch.common.config')
+dhcp_agent.register_options()
 
 
 class BoolOptCallback(cfg.BoolOpt):
@@ -49,6 +51,19 @@ def check_ovs_patch():
                     'Please ensure that the version of openvswitch '
                     'being used has patch port support or disable features '
                     'requiring patch ports (gre/vxlan, etc.).'))
+    return result
+
+
+# NOTE(ihrachyshka): since the minimal version is currently capped due to
+# missing hwaddr matching in dnsmasq < 2.67, a better version of the check
+# would actually start dnsmasq server and issue a DHCP request using a IPv6
+# DHCP client.
+def check_dnsmasq_version():
+    result = checks.dnsmasq_version_supported()
+    if not result:
+        LOG.error(_LE('The installed version of dnsmasq is too old. '
+                      'Please update to at least version %s.'),
+                  checks.get_minimal_dnsmasq_version_supported())
     return result
 
 
@@ -81,6 +96,8 @@ OPTS = [
                     help=_('Check for nova notification support')),
     BoolOptCallback('arp_responder', check_arp_responder, default=False,
                     help=_('Check for ARP responder support')),
+    BoolOptCallback('dnsmasq_version', check_dnsmasq_version,
+                    help=_('Check minimal dnsmasq version')),
 ]
 
 
@@ -101,6 +118,8 @@ def enable_tests_from_config():
         cfg.CONF.set_override('nova_notify', True)
     if cfg.CONF.AGENT.arp_responder:
         cfg.CONF.set_override('arp_responder', True)
+    if cfg.CONF.dhcp_driver == 'neutron.agent.linux.dhcp.Dnsmasq':
+        cfg.CONF.set_override('dnsmasq_version', True)
 
 
 def all_tests_passed():

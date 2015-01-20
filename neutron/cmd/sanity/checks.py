@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 import netaddr
 
 from neutron.agent.linux import ovs_lib
@@ -23,6 +25,9 @@ from neutron.plugins.common import constants as const
 from neutron.plugins.openvswitch.common import constants as ovs_const
 
 LOG = logging.getLogger(__name__)
+
+
+MINIMUM_DNSMASQ_VERSION = 2.67
 
 
 def vxlan_supported(root_helper, from_ip='192.0.2.1', to_ip='192.0.2.2'):
@@ -89,3 +94,22 @@ def arp_responder_supported(root_helper):
                                dl_vlan=42,
                                nw_dst='%s' % ip,
                                actions=actions)
+
+
+def get_minimal_dnsmasq_version_supported():
+    return MINIMUM_DNSMASQ_VERSION
+
+
+def dnsmasq_version_supported():
+    try:
+        cmd = ['dnsmasq', '--version']
+        out = agent_utils.execute(cmd)
+        m = re.search(r"version (\d+\.\d+)", out)
+        ver = float(m.group(1)) if m else 0
+        if ver < MINIMUM_DNSMASQ_VERSION:
+            return False
+    except (OSError, RuntimeError, IndexError, ValueError) as e:
+        LOG.debug("Exception while checking minimal dnsmasq version. "
+                  "Exception: %s", e)
+        return False
+    return True
