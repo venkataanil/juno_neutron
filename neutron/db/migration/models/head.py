@@ -62,6 +62,7 @@ from neutron.plugins.ml2.drivers.brocade.db import (  # noqa
 from neutron.plugins.ml2.drivers.cisco.apic import apic_model  # noqa
 from neutron.plugins.ml2.drivers.cisco.nexus import (  # noqa
     nexus_models_v2 as ml2_nexus_models_v2)
+from neutron.plugins.ml2.drivers.cisco.ucsm import ucsm_model  # noqa
 from neutron.plugins.ml2.drivers import type_flat  # noqa
 from neutron.plugins.ml2.drivers import type_gre  # noqa
 from neutron.plugins.ml2.drivers import type_vlan  # noqa
