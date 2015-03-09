@@ -42,7 +42,7 @@ from neutron.common import utils as common_utils
 from neutron import context
 from neutron import manager
 from neutron.openstack.common import excutils
-from neutron.openstack.common.gettextutils import _LW
+from neutron.openstack.common.gettextutils import _LE, _LW
 from neutron.openstack.common import importutils
 from neutron.openstack.common import log as logging
 from neutron.openstack.common import loopingcall

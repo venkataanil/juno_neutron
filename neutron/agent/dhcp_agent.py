@@ -35,6 +35,7 @@ from neutron.common import topics
 from neutron.common import utils
 from neutron import context
 from neutron import manager
+from neutron.openstack.common.gettextutils import _LE
 from neutron.openstack.common import importutils
 from neutron.openstack.common import log as logging
 from neutron.openstack.common import loopingcall
