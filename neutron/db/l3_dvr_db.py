@@ -168,7 +168,7 @@ class L3_NAT_with_dvr_db_mixin(l3_db.L3_NAT_db_mixin,
         """
         fip_hostid = self.get_vm_port_hostid(
             context, floatingip_db['fixed_port_id'])
-        if fip_hostid and self.check_fips_availability_on_host(
+        if fip_hostid and self._check_fips_availability_on_host(
             context, fip_id, fip_hostid):
             LOG.debug('Deleting the Agent GW Port on host: %s', fip_hostid)
             self.delete_floatingip_agent_gateway_port(context, fip_hostid)
@@ -400,12 +400,15 @@ class L3_NAT_with_dvr_db_mixin(l3_db.L3_NAT_db_mixin,
         if ports:
             return ports[0]
 
-    def check_fips_availability_on_host(self, context, fip_id, host_id):
-        """Query all floating_ips and filter by particular host."""
+    def _get_router_ids(self, context):
+        """Function to retrieve router IDs for a context without joins"""
+        query = self._model_query(context, l3_db.Router.id)
+        return [row[0] for row in query]
+
+    def _check_fips_availability_on_host(self, context, fip_id, host_id):
         fip_count_on_host = 0
         with context.session.begin(subtransactions=True):
-            routers = self._get_sync_routers(context, router_ids=None)
-            router_ids = [router['id'] for router in routers]
+            router_ids = self._get_router_ids(context)
             floating_ips = self._get_sync_floating_ips(context, router_ids)
             # Check for the active floatingip in the host
             for fip in floating_ips:
