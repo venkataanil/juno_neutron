@@ -27,8 +27,8 @@ from eventlet import greenthread
 
 from neutron.common import constants
 from neutron.common import utils
-from neutron.openstack.common.gettextutils import _LE
 from neutron.openstack.common import excutils
+from neutron.openstack.common.gettextutils import _LE
 from neutron.openstack.common import log as logging
 
 
