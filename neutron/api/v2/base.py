@@ -26,6 +26,7 @@ from neutron.api.v2 import resource as wsgi_resource
 from neutron.common import constants as const
 from neutron.common import exceptions
 from neutron.common import rpc as n_rpc
+from neutron.db import api as db_api
 from neutron.openstack.common import excutils
 from neutron.openstack.common import log as logging
 from neutron import policy
@@ -180,6 +181,7 @@ class Controller(object):
 
     def __getattr__(self, name):
         if name in self._member_actions:
+            @db_api.retry_db_errors
             def _handle_action(request, id, **kwargs):
                 arg_list = [request.context, id]
                 # Ensure policy engine is initialized
@@ -190,7 +192,7 @@ class Controller(object):
                 except exceptions.PolicyNotAuthorized:
                     msg = _('The resource could not be found.')
                     raise webob.exc.HTTPNotFound(msg)
-                body = kwargs.pop('body', None)
+                body = copy.deepcopy(kwargs.pop('body', None))
                 # Explicit comparison with None to distinguish from {}
                 if body is not None:
                     arg_list.append(body)
@@ -368,6 +370,7 @@ class Controller(object):
             # it is then deleted
             raise ex
 
+    @db_api.retry_db_errors
     def create(self, request, body=None, **kwargs):
         """Creates a new instance of the requested entity."""
         parent_id = kwargs.get(self._parent_id_name)
@@ -451,6 +454,7 @@ class Controller(object):
                 return notify({self._resource: self._view(request.context,
                                                           obj)})
 
+    @db_api.retry_db_errors
     def delete(self, request, id, **kwargs):
         """Deletes the specified entity."""
         self._notifier.info(request.context,
@@ -484,6 +488,7 @@ class Controller(object):
                                      result,
                                      notifier_method)
 
+    @db_api.retry_db_errors
     def update(self, request, id, body=None, **kwargs):
         """Updates the specified entity's attributes."""
         parent_id = kwargs.get(self._parent_id_name)

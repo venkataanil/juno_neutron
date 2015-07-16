@@ -124,3 +124,7 @@ class wrap_db_retry(object):
                             self.max_retry_interval
                         )
         return wrapper
+
+
+retry_db_errors = wrap_db_retry(max_retries=MAX_RETRIES,
+                                retry_on_deadlock=True)
