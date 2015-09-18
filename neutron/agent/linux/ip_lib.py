@@ -193,7 +193,7 @@ class IPWrapper(SubProcessBase):
     @classmethod
     def get_namespaces(cls, root_helper):
         output = cls._execute('', 'netns', ('list',), root_helper=root_helper)
-        return [l.strip() for l in output.split('\n')]
+        return [l.split()[0] for l in output.splitlines()]
 
 
 class IpRule(IPWrapper):
@@ -551,9 +551,8 @@ class IpNetnsCommand(IpCommandBase):
 
     def exists(self, name):
         output = self._parent._execute('o', 'netns', ['list'])
-
-        for line in output.split('\n'):
-            if name == line.strip():
+        for line in [l.split()[0] for l in output.splitlines()]:
+            if name == line:
                 return True
         return False
 
