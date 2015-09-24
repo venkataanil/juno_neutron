@@ -44,6 +44,19 @@ class DhcpOpt(object):
         return str(self.__dict__)
 
 
+class FakeDhcpPort(object):
+    id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa'
+    admin_state_up = True
+    device_owner = 'network:dhcp'
+    fixed_ips = [FakeIPAllocation('192.168.0.1',
+                                  'dddddddd-dddd-dddd-dddd-dddddddddddd')]
+    mac_address = '00:00:80:aa:bb:ee'
+    device_id = 'fake_dhcp_port'
+
+    def __init__(self):
+        self.extra_dhcp_opts = []
+
+
 class FakePort1:
     id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'
     admin_state_up = True
@@ -343,6 +356,13 @@ class FakeV6Network:
     id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
     subnets = [FakeV6Subnet()]
     ports = [FakePort2()]
+    namespace = 'qdhcp-ns'
+
+
+class FakeNetworkDhcpPort(object):
+    id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+    subnets = [FakeV4Subnet()]
+    ports = [FakePort1(), FakeDhcpPort()]
     namespace = 'qdhcp-ns'
 
 
@@ -1109,6 +1129,36 @@ tag:tag0,option:router""".lstrip()
             dm._output_opts_file()
 
         self.safe.assert_called_once_with('/foo/opts', expected)
+
+    def _test__output_opts_file_helper(self, config_opts, expected_mdt_ip):
+        for key, value in config_opts.items():
+            self.conf.set_override(key, value)
+        dm = self._get_dnsmasq(FakeNetworkDhcpPort)
+        with mock.patch('neutron.agent.linux.ip_lib.IPDevice') as ipdev_mock:
+            list_addr = ipdev_mock.return_value.addr.list
+            list_addr.return_value = [{'cidr': alloc.ip_address + '/24'}
+                                      for alloc in FakeDhcpPort.fixed_ips]
+            dm._output_opts_file()
+
+        options = self.safe.call_args[0][1].splitlines()
+        contains_metadata_ip = any(['%s/32' % dhcp.METADATA_DEFAULT_IP in line
+                                    for line in options])
+        self.assertEqual(expected_mdt_ip, contains_metadata_ip)
+
+    def test__output_opts_file_no_metadata(self):
+        config = {'enable_isolated_metadata': False,
+                  'force_metadata': False}
+        self._test__output_opts_file_helper(config, False)
+
+    def test__output_opts_file_isolated_metadata_with_router(self):
+        config = {'enable_isolated_metadata': True,
+                  'force_metadata': False}
+        self._test__output_opts_file_helper(config, True)
+
+    def test__output_opts_file_forced_metadata(self):
+        config = {'enable_isolated_metadata': False,
+                  'force_metadata': True}
+        self._test__output_opts_file_helper(config, True)
 
     @property
     def _test_no_dhcp_domain_alloc_data(self):

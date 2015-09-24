@@ -624,7 +624,7 @@ class Dnsmasq(DhcpLocalProcess):
     def _output_opts_file(self):
         """Write a dnsmasq compatible options file."""
 
-        if self.conf.enable_isolated_metadata:
+        if self.conf.enable_isolated_metadata or self.conf.force_metadata:
             subnet_to_interface_ip = self._make_subnet_interface_ip_map()
 
         options = []
