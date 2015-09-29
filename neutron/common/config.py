@@ -163,9 +163,12 @@ def setup_logging():
     product_name = "neutron"
     logging.setup(product_name)
     LOG.info(_("Logging enabled!"))
+    n_version = "%s-%s" % (
+        version.version_info.version_string(),
+        version.version_info.release_string())
     LOG.info(_("%(prog)s version %(version)s"),
              {'prog': sys.argv[0],
-              'version': version.version_info.release_string()})
+              'version': n_version})
     LOG.debug("command line: %s" % " ".join(sys.argv))
 
 
