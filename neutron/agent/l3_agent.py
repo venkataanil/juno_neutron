@@ -1890,7 +1890,7 @@ class L3NATAgent(firewall_l3_agent.FWaaSL3AgentRpcCallback,
         if not self.conf.use_namespaces:
             return [self.conf.router_id]
 
-    @periodic_task.periodic_task
+    @periodic_task.periodic_task(run_immediately=True)
     def periodic_sync_routers_task(self, context):
         self._sync_routers_task(context)
 
@@ -1952,8 +1952,6 @@ class L3NATAgent(firewall_l3_agent.FWaaSL3AgentRpcCallback,
     def after_start(self):
         eventlet.spawn_n(self._process_routers_loop)
         LOG.info(_("L3 agent started"))
-        # When L3 agent is ready, we immediately do a full sync
-        self.periodic_sync_routers_task(self.context)
 
     def _update_routing_table(self, ri, operation, route):
         cmd = ['ip', 'route', operation, 'to', route['destination'],
