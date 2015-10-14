@@ -127,4 +127,5 @@ class wrap_db_retry(object):
 
 
 retry_db_errors = wrap_db_retry(max_retries=MAX_RETRIES,
+                                retry_on_request=True,
                                 retry_on_deadlock=True)

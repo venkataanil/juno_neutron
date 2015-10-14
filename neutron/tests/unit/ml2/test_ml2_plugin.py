@@ -19,8 +19,6 @@ import testtools
 import uuid
 import webob
 
-from oslo.db import exception as db_exc
-
 from neutron.common import constants
 from neutron.common import exceptions as exc
 from neutron.common import utils
@@ -134,15 +132,13 @@ class TestMl2NetworksV2(test_plugin.TestNetworksV2,
 
     def test_create_network_segment_allocation_fails(self):
         plugin = manager.NeutronManager.get_plugin()
-        with mock.patch.object(plugin.type_manager, 'create_network_segments',
-            side_effect=exc.RetryRequest(ValueError())) as f:
-            self.assertRaises(ValueError,
-                              plugin.create_network,
-                              context.get_admin_context(),
-                              {'network': {'tenant_id': 'sometenant',
-                                           'name': 'dummy',
-                                           'admin_state_up': True,
-                                           'shared': False}})
+        with mock.patch.object(
+            plugin.type_manager, 'create_network_segments',
+            side_effect=exc.RetryRequest(ValueError())
+        ) as f:
+            data = {'network': {'tenant_id': 'sometenant', 'name': 'dummy',
+                                'admin_state_up': True, 'shared': False}}
+            self.new_create_request('networks', data).get_response(self.api)
             self.assertEqual(db_api.MAX_RETRIES + 1, f.call_count)
 
 
@@ -240,21 +236,6 @@ class TestMl2PortsV2(test_plugin.TestPortsV2, Ml2PluginV2TestCase):
             # check that nothing is returned when notifications are handled
             # by the called method
             self.assertIsNone(l3plugin.disassociate_floatingips(ctx, port_id))
-
-    def test_delete_port_tolerates_db_deadlock(self):
-        ctx = context.get_admin_context()
-        plugin = manager.NeutronManager.get_plugin()
-        with self.port() as port:
-            port_db, binding = ml2_db.get_locked_port_and_binding(
-                ctx.session, port['port']['id'])
-            with mock.patch('neutron.plugins.ml2.plugin.'
-                            'db.get_locked_port_and_binding') as lock:
-                lock.side_effect = [db_exc.DBDeadlock,
-                                    (port_db, binding)]
-                plugin.delete_port(ctx, port['port']['id'])
-                self.assertEqual(2, lock.call_count)
-                self.assertRaises(
-                    exc.PortNotFound, plugin.get_port, ctx, port['port']['id'])
 
 
 class TestMl2DvrPortsV2(TestMl2PortsV2):

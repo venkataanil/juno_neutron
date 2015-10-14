@@ -503,14 +503,8 @@ class Ml2Plugin(db_base_plugin_v2.NeutronDbPluginV2,
             self.mechanism_manager.create_network_precommit(mech_context)
         return result, mech_context
 
-    @db_api.wrap_db_retry(max_retries=db_api.MAX_RETRIES,
-                          retry_on_request=True)
-    def _create_network_with_retries(self, context, network):
-        return self._create_network_db(context, network)
-
     def create_network(self, context, network):
-        result, mech_context = self._create_network_with_retries(context,
-                                                                 network)
+        result, mech_context = self._create_network_db(context, network)
         try:
             self.mechanism_manager.create_network_postcommit(mech_context)
         except ml2_exc.MechanismDriverError:
@@ -986,8 +980,6 @@ class Ml2Plugin(db_base_plugin_v2.NeutronDbPluginV2,
                 cur_binding.driver = new_binding.driver
                 cur_binding.segment = new_binding.segment
 
-    @db_api.wrap_db_retry(max_retries=db_api.MAX_RETRIES,
-                          retry_on_deadlock=True)
     def delete_port(self, context, id, l3_port_check=True):
         LOG.debug(_("Deleting port %s"), id)
         removed_routers = []
