@@ -13,16 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
-from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_db
-from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_network_driver
-
 from neutron.common import constants
 from neutron.extensions import portbindings
 from neutron.openstack.common.gettextutils import _LE, _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
+from neutron.plugins.ml2.drivers.cisco.ucsm import constants as const
+from neutron.plugins.ml2.drivers.cisco.ucsm import ucsm_db
+from neutron.plugins.ml2.drivers.cisco.ucsm import ucsm_network_driver
 
 LOG = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
 
     def _get_vlanid(self, context):
         """Returns vlan_id associated with a bound VLAN segment."""
-        segment = context.bottom_bound_segment
+        segment = context.bound_segment
         if segment and self.check_segment(segment):
             return segment.get(api.SEGMENTATION_ID)
 
