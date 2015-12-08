@@ -79,10 +79,6 @@ class InvalidAuthenticationTypeExecption(exceptions.NeutronException):
                {'valid_auth_types': ', '.join(VALID_AUTH_TYPES)})
 
 
-class VIPDuplicateAddressException(exceptions.NeutronException):
-    message = (_('Attempted to add duplicate VIP address'))
-
-
 class KeepalivedVipAddress(object):
     """A virtual address entry of a keepalived configuration."""
 
@@ -184,7 +180,9 @@ class KeepalivedInstance(object):
         for vip in self.vips:
             if (vip.ip_address == ip_cidr
                     and vip.interface_name == interface_name):
-                raise VIPDuplicateAddressException()
+                LOG.debug('VIP (%s, %s, %s) already present in %s' %
+                          (ip_cidr, interface_name, scope, self.vips))
+                return
         self.vips.append(KeepalivedVipAddress(ip_cidr, interface_name, scope))
 
     def remove_vips_vroutes_by_interface(self, interface_name):
