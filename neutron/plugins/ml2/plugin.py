@@ -181,6 +181,7 @@ class Ml2Plugin(db_base_plugin_v2.NeutronDbPluginV2,
     def _process_port_binding(self, mech_context, attrs):
         binding = mech_context._binding
         port = mech_context.current
+        port_id = port['id']
         changes = False
 
         host = attrs and attrs.get(portbindings.HOST_ID)
@@ -214,6 +215,10 @@ class Ml2Plugin(db_base_plugin_v2.NeutronDbPluginV2,
             binding.vif_details = ''
             binding.driver = None
             binding.segment = None
+            port['status'] = const.PORT_STATUS_DOWN
+            super(Ml2Plugin, self).update_port(
+                mech_context._plugin_context, port_id,
+                {attributes.PORT: {'status': const.PORT_STATUS_DOWN}})
 
         if port['device_owner'] == const.DEVICE_OWNER_DVR_INTERFACE:
             binding.vif_type = portbindings.VIF_TYPE_DISTRIBUTED

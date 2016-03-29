@@ -154,6 +154,16 @@ class TestMl2PortsV2(test_plugin.TestPortsV2, Ml2PluginV2TestCase):
             self.assertEqual('DOWN', port['port']['status'])
             self.assertEqual('DOWN', self.port_create_status)
 
+    def test_update_port_host_id_changed(self):
+        ctx = context.get_admin_context()
+        plugin = manager.NeutronManager.get_plugin()
+        host_id = {portbindings.HOST_ID: 'host1'}
+        with self.port(**host_id) as port:
+            plugin.update_port_status(ctx, port['port']['id'], 'UP')
+            port['port']['binding:host_id'] = 'host2'
+            result = plugin.update_port(ctx, port['port']['id'], port)
+            self.assertEqual(constants.PORT_STATUS_DOWN, result['status'])
+
     def test_update_non_existent_port(self):
         ctx = context.get_admin_context()
         plugin = manager.NeutronManager.get_plugin()
